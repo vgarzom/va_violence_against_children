@@ -8,11 +8,14 @@ let data = [];
 let dataAll = [];
 let dataG = [];
 let height;
-let value_key = "total_casos"
+let value_key = "total_casos";
+let total_key = "total";
 const minLabel = margin.left + 150;
 let currentSlide = 0;
 let transitionDuration = 500;
 let drawingByGender = false;
+let drawStacked = false;
+let drawCentralLine = false;
 
 let delay = (d, i) => { return i * 5 };
 
@@ -21,7 +24,7 @@ let updateBarChart = (sortedNames) => {
 
   //Defines the scales
   const x = d3.scaleLinear()
-    .domain([0, d3.max(data, d => d[value_key])])
+    .domain([0, d3.max(data, d => { return drawStacked ? d[total_key] : d[value_key] })])
     .range([margin.left, width - margin.right]);
 
   const y = d3.scaleBand()
@@ -51,9 +54,10 @@ let updateBarChart = (sortedNames) => {
   transition
     .selectAll(".bar")
     .delay(delay)
-    .attr("y", (d) =>  barPosition(d,y))
+    .attr("x", d => { return !drawStacked ? x(0) : (d.type === "m" ? x(0) : x(d[total_key] - d[value_key])) })
+    .attr("y", (d) => barPosition(d, y))
     .attr("width", d => x(d[value_key]) - x(0))
-    .attr("height", d => barHeight(d,y))
+    .attr("height", d => barHeight(d, y))
     .attr("fill", (d) => color(d.type));
 
   g.selectAll(".bar")
@@ -61,44 +65,56 @@ let updateBarChart = (sortedNames) => {
     .enter()
     .append("rect")
     .attr("class", "bar")
-    .attr("x", x(0))
+    .attr("x", d => { return !drawStacked ? x(0) : (d.type === "m" ? x(0) : x(d[total_key] - d[value_key])) })
     .attr("fill", (d) => color(d.type))
-    .attr("y", (d) =>  barPosition(d,y))
-    .attr("height", d => barHeight(d,y))
+    .attr("y", (d) => barPosition(d, y))
+    .attr("height", d => barHeight(d, y))
     .attr("width", d => x(d[value_key]) - x(0));
 
+  g.select(".centralLine").remove();
+  if (drawCentralLine) {
+    g.append("line")
+      .attr("class", "centralLine")
+      .attr("x1", x(50))
+      .attr("y1", 0)
+      .attr("x2", x(50))
+      .attr("y2", height)
+      .attr("stroke", "gray")
+      .attr("stroke-width", 2);
+  }
 
-/*
-  //Draw text
-  gText.style("font", "13px sans-serif")
-    .selectAll("text")
-    .data(data)
-    .enter().append("text")
-    .attr("x", d => {
-      const v = x(d[value_key]);
-      return v + (v < minLabel ? 4 : -4)
-    })
-    .attr("class", "label_test")
-    .attr("text-anchor", d => (x(d[value_key]) < minLabel ? "start" : "end"))
-    .attr("fill", d => (x(d[value_key]) < minLabel ? "currentColor" : "white"))
-    .attr("fill-opacity", d => (x(d[value_key]) < minLabel ? .7 : 1))
-    .attr("y", d => y(d.nombre) + y.bandwidth() / 2)
-    .attr("dy", "0.35em")
-    .text(d => d[value_key]);
 
-  gText.selectAll(".label_test")
-    .transition()
-    .duration(transitionDuration)
-    .delay(delay)
-    .attr("x", d => {
-      const v = x(d[value_key]);
-      return v + (v < minLabel ? 4 : -4)
-    })
-    .attr("text-anchor", d => (x(d[value_key]) < minLabel ? "start" : "end"))
-    .attr("fill", d => (x(d[value_key]) < minLabel ? "currentColor" : "white"))
-    .attr("fill-opacity", d => (x(d[value_key]) < minLabel ? .7 : 1))
-    .text(d => d[value_key]);
-*/
+  /*
+    //Draw text
+    gText.style("font", "13px sans-serif")
+      .selectAll("text")
+      .data(data)
+      .enter().append("text")
+      .attr("x", d => {
+        const v = x(d[value_key]);
+        return v + (v < minLabel ? 4 : -4)
+      })
+      .attr("class", "label_test")
+      .attr("text-anchor", d => (x(d[value_key]) < minLabel ? "start" : "end"))
+      .attr("fill", d => (x(d[value_key]) < minLabel ? "currentColor" : "white"))
+      .attr("fill-opacity", d => (x(d[value_key]) < minLabel ? .7 : 1))
+      .attr("y", d => y(d.nombre) + y.bandwidth() / 2)
+      .attr("dy", "0.35em")
+      .text(d => d[value_key]);
+  
+    gText.selectAll(".label_test")
+      .transition()
+      .duration(transitionDuration)
+      .delay(delay)
+      .attr("x", d => {
+        const v = x(d[value_key]);
+        return v + (v < minLabel ? 4 : -4)
+      })
+      .attr("text-anchor", d => (x(d[value_key]) < minLabel ? "start" : "end"))
+      .attr("fill", d => (x(d[value_key]) < minLabel ? "currentColor" : "white"))
+      .attr("fill-opacity", d => (x(d[value_key]) < minLabel ? .7 : 1))
+      .text(d => d[value_key]);
+  */
   // Draw Axes
   let axisTransition = gAxis.transition().duration(transitionDuration);
   axisTransition.select(".y.axis")
@@ -127,6 +143,8 @@ let drawBySlide = () => {
   switch (currentSlide) {
     case 0:
       drawingByGender = false;
+      drawStacked = false;
+      drawCentralLine = false;
       data = dataAll;
       value_key = "total_casos";
       var sortedData = data.sort((a, b) => d3.ascending(a.nombre, b.nombre))
@@ -135,6 +153,8 @@ let drawBySlide = () => {
       break;
     case 1:
       drawingByGender = false;
+      drawStacked = false;
+      drawCentralLine = false;
       data = dataAll;
       value_key = "total_casos";
       var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
@@ -143,6 +163,8 @@ let drawBySlide = () => {
       break;
     case 2:
       drawingByGender = false;
+      drawStacked = false;
+      drawCentralLine = false;
       data = dataAll;
       value_key = "total_porciento";
       var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
@@ -151,16 +173,43 @@ let drawBySlide = () => {
       break;
     case 3:
       drawingByGender = false;
+      drawStacked = false;
+      drawCentralLine = false;
       data = dataAll;
       value_key = "total_porciento";
       var sortedData = data.sort((a, b) => d3.descending(a.total_porciento, b.total_porciento))
         .map(d => d.nombre);
       updateBarChart(sortedData);
       break;
-    case 4:
+    case 5:
       drawingByGender = true;
+      drawStacked = false;
+      drawCentralLine = false;
       data = dataG;
       value_key = "total_porciento";
+      var sortedData = data.sort((a, b) => d3.descending(a.total, b.total))
+        .map(d => d.nombre);
+      updateBarChart(sortedData);
+      break;
+    case 4:
+      drawingByGender = true;
+      drawStacked = true;
+      drawCentralLine = false;
+      data = dataG;
+      value_key = "total_porciento";
+      total_key = "total";
+      var sortedData = data.sort((a, b) => d3.descending(a.total, b.total))
+        .map(d => d.nombre);
+      updateBarChart(sortedData);
+      break;
+
+    case 6:
+      drawingByGender = true;
+      drawStacked = true;
+      drawCentralLine = true;
+      data = dataG;
+      value_key = "total_porciento_parcial";
+      total_key = "total_porcentaje";
       var sortedData = data.sort((a, b) => d3.descending(a.total, b.total))
         .map(d => d.nombre);
       updateBarChart(sortedData);
@@ -200,6 +249,8 @@ let readData = () => {
       let dm = {
         nombre: obj.nombre,
         total_porciento: (obj.hombre_casos / obj.total_casos) * obj.total_porciento,
+        total_porciento_parcial: (obj.hombre_casos / obj.total_casos) * 100,
+        total_porcentaje: 100,
         type: "m",
         total: obj.total_porciento
       };
@@ -207,6 +258,8 @@ let readData = () => {
       let df = {
         nombre: obj.nombre,
         total_porciento: (obj.mujer_casos / obj.total_casos) * obj.total_porciento,
+        total_porciento_parcial: (obj.mujer_casos / obj.total_casos) * 100,
+        total_porcentaje: 100,
         type: "f",
         total: obj.total_porciento
       };
@@ -214,7 +267,7 @@ let readData = () => {
       dataG.push(dm);
       dataG.push(df);
     });
-    
+
     data.sort((a, b) => d3.ascending(a.nombre, b.nombre));
     drawYAxis();
     drawBySlide();
@@ -233,10 +286,16 @@ let color = (type) => {
 }
 
 let barHeight = (d, scale) => {
+  if (drawStacked) {
+    return scale.bandwidth();
+  }
   return (d.type === "b" ? 1.0 : 0.5) * scale.bandwidth();
 }
 
 let barPosition = (d, scale) => {
+  if (drawStacked) {
+    return scale(d.nombre);
+  }
   let h = barHeight(d, scale);
   return (d.type === "f" ? h : 0.0) + scale(d.nombre);
 }
