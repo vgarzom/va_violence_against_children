@@ -1,50 +1,67 @@
 const width = 700;
 const margin = { top: 50, left: 100, right: 50, bottom: 0 };
-var cursorColor = 'steelblue';
 const svg = d3.select("#chart-container").append("svg");
-var y;
-var g = svg.append("g");
-var gText = svg.append("g");
-var data = [];
-var height;
+let g = svg.append("g");
+let gText = svg.append("g");
+let gAxis = svg.append("g");
+let data = [];
+let height;
 let value_key = "total_casos"
 const minLabel = margin.left + 150;
+let currentSlide = 0;
+let transitionDuration = 500;
 
-barChart = (_data) => {
-  data = _data;
+let delay = (d, i) => { return i * 10 };
+
+let updateBarChart = (sortedNames) => {
   height = data.length * 22 + margin.top + margin.bottom;
 
+  //Defines the scales
   const x = d3.scaleLinear()
     .domain([0, d3.max(data, d => d[value_key])])
     .range([margin.left, width - margin.right]);
-  y = d3.scaleBand()
-    .domain(data.map(d => d.nombre))
+
+  const y = d3.scaleBand()
+    .domain(sortedNames)
     .range([margin.top, height - margin.bottom])
     .padding(0.1);
 
+  //Defines the x Axis
   const xAxis = g => g
     .attr("transform", `translate(0,${margin.top})`)
     .call(d3.axisTop(x).ticks(width / 80))
     .call(g => g.select(".domain").remove())
 
+
   svg.attr("height", height)
     .attr("width", width - 5);
 
-  var bar =
-    g.selectAll(".bar")
-      .data(data);
+  g.selectAll('.bar')
+    .sort((a, b) => {
+      return y(a.nombre) - y(b.nombre);
+    })
 
-  bar.enter().append("rect")
+  //Draw barchart
+  var transition = g.transition().duration(transitionDuration);
+
+  transition
+    .selectAll(".bar")
+    .delay(delay)
+    .attr("y", (d) => { return y(d.nombre) })
+    .attr("width", d => x(d[value_key]) - x(0));
+
+  g.selectAll(".bar")
+    .data(data)
+    .enter()
+    .append("rect")
     .attr("class", "bar")
     .attr("x", x(0))
-    .attr("fill", cursorColor ? cursorColor : 'steelblue')
-    .attr("y", d => y(d.nombre))
-    .attr("width", d => x(d[value_key]) - x(0))
-    .attr("height", y.bandwidth());
+    .attr("fill", (d) => color(d.type))
+    .attr("y", (d, i) => { console.log("enter rect"); return y(d.nombre); })
+    .attr("height", y.bandwidth())
+    .attr("width", d => x(d[value_key]) - x(0));
 
-
-
-
+  //Draw text
   gText.style("font", "13px sans-serif")
     .selectAll("text")
     .data(data)
@@ -60,101 +77,74 @@ barChart = (_data) => {
     .attr("y", d => y(d.nombre) + y.bandwidth() / 2)
     .attr("dy", "0.35em")
     .text(d => d[value_key]);
-  g.select("#xAxisG").remove();
-  g.append("g").attr("id", "xAxisG").call(xAxis);
 
-  g.append("g")
-    .attr("class", "y axis")
-    .attr("transform", `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y));
-
-  return svg.node();
-}
-
-changeValue = (_data) => {
-  data = _data;
-
-  const x = d3.scaleLinear()
-    .domain([0, d3.max(data, d => d[value_key])])
-    .range([margin.left, width - margin.right]);
-  y = d3.scaleBand()
-    .domain(data.map(d => d.nombre))
-    .range([margin.top, height - margin.bottom])
-    .padding(0.1);
-
-  const xAxis = g => g
-    .attr("transform", `translate(0,${margin.top})`)
-    .call(d3.axisTop(x).ticks(width / 80))
-    .call(g => g.select(".domain").remove())
-
-  svg.attr("height", height)
-    .attr("width", width - 5);
-
-  var bar =
-    g.selectAll(".bar")
-      .data(data);
-
-  bar.transition().duration(500)
-    .attr("class", "bar")
-    .attr("width", d => x(d[value_key]) - x(0))
-
-  gText
-    .selectAll("text")
-    .data(data)
+  gText.selectAll(".label_test")
     .transition()
-    .duration(750)
+    .duration(transitionDuration)
+    .delay(delay)
     .attr("x", d => {
       const v = x(d[value_key]);
       return v + (v < minLabel ? 4 : -4)
     })
-    .attr("class", "label_test")
     .attr("text-anchor", d => (x(d[value_key]) < minLabel ? "start" : "end"))
     .attr("fill", d => (x(d[value_key]) < minLabel ? "currentColor" : "white"))
     .attr("fill-opacity", d => (x(d[value_key]) < minLabel ? .7 : 1))
-    .attr("y", d => y(d.nombre) + y.bandwidth() / 2)
-    .attr("dy", "0.35em")
     .text(d => d[value_key]);
 
-  g.select("#xAxisG").remove();
-  g.append("g").attr("id", "xAxisG").call(xAxis);
-}
-
-
-
-function sortBarChart(sortedData) {
-  y0 = d3.scaleBand()
-    .domain(sortedData.map(d => d.nombre))
-    .range([margin.top, height - margin.bottom])
-    .padding(0.1);
-
-
-  g.selectAll('rect')
-    .sort((a, b) => {
-      return y0(a.nombre) - y0(b.nombre);
-    })
-
-  var transition = g.transition().duration(750);
-  var delay = (d, i) => { return i * 10 };
-
-  transition
-    .selectAll("rect")
-    .delay(delay)
-    .attr("y", (d) => { return y0(d.nombre) });
-  transition.select(".y.axis")
-    .call(d3.axisLeft(y0))
+  // Draw Axes
+  let axisTransition = gAxis.transition().duration(transitionDuration);
+  axisTransition.select(".y.axis")
+    .call(d3.axisLeft(y))
     .selectAll("g")
     .delay(delay);
 
-  transition = gText.transition().duration(750);
-  transition
-    .selectAll(".label_test")
-    .delay(delay)
-    .attr("y", (d) => y0(d.nombre) + y0.bandwidth() / 2);
-
+  g.select("#xAxisG").remove();
+  g.append("g").attr("id", "xAxisG").call(xAxis);
 
 }
 
-var readData = () => {
+let drawYAxis = () => {
+  const y = d3.scaleBand()
+    .domain(data.map(d => d.nombre))
+    .range([margin.top, height - margin.bottom])
+    .padding(0.1);
+
+  gAxis.append("g")
+    .attr("class", "y axis")
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y));
+}
+
+let drawBySlide = () => {
+  switch (currentSlide) {
+    case 0:
+      value_key = "total_casos";
+      var sortedData = data.sort((a, b) => d3.ascending(a.nombre, b.nombre))
+        .map(d => d.nombre);
+      updateBarChart(sortedData);
+      break;
+    case 1:
+      value_key = "total_casos";
+      var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
+        .map(d => d.nombre);
+      updateBarChart(sortedData);
+      break;
+    case 2:
+      value_key = "total_porciento";
+      var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
+        .map(d => d.nombre);
+      updateBarChart(sortedData);
+      break;
+    case 3:
+      value_key = "total_porciento";
+      var sortedData = data.sort((a, b) => d3.descending(a.total_porciento, b.total_porciento))
+        .map(d => d.nombre);
+      updateBarChart(sortedData);
+      break;
+  }
+}
+
+let readData = () => {
   var result = {};
   d3.csv(
     "../assets/data.csv",
@@ -174,6 +164,7 @@ var readData = () => {
       d.total_casos = +d.total_casos;
       d.total_porciento = +d.total_porciento;
       d.id = d.codigo;
+      d.type = "b";
     }
   ).then(() => {
     let keys = d3.keys(result);
@@ -182,39 +173,25 @@ var readData = () => {
     });
 
     data.sort((a, b) => d3.ascending(a.nombre, b.nombre))
-    barChart(data);
+    drawYAxis();
+    drawBySlide();
   });
 }
 
-readData();
+let color = (type) => {
+  switch (type) {
+    case "m":
+      return "steelblue";
+    case "f":
+      return "pink";
+    default:
+      return "green"
+  }
+}
 
 Reveal.addEventListener('slidechanged', function (evt) {
   currentSlide = evt.indexh;
-  switch (currentSlide) {
-    case 0:
-      var sortedData = data.sort((a, b) => d3.ascending(a.nombre, b.nombre));
-      sortBarChart(sortedData);
-      break;
-    case 1:
-      var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos));
-      sortBarChart(sortedData);
-      if (value_key !== "total_casos") {
-        value_key = "total_casos";
-        changeValue(data);
-      }
-      break;
-    case 2:
-      if (value_key === "total_porciento") {
-        var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos));
-        sortBarChart(sortedData);
-      } else {
-        value_key = "total_porciento"
-        changeValue(data);
-      }
-      break;
-    case 3:
-      var sortedData = data.sort((a, b) => d3.descending(a.total_porciento, b.total_porciento));
-      sortBarChart(sortedData);
-      break;
-  }
+  drawBySlide();
 });
+
+readData();
