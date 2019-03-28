@@ -5,16 +5,19 @@ let g = svg.append("g");
 let gText = svg.append("g");
 let gAxis = svg.append("g");
 let data = [];
+let dataAll = [];
+let dataG = [];
 let height;
 let value_key = "total_casos"
 const minLabel = margin.left + 150;
 let currentSlide = 0;
 let transitionDuration = 500;
+let drawingByGender = false;
 
-let delay = (d, i) => { return i * 10 };
+let delay = (d, i) => { return i * 5 };
 
 let updateBarChart = (sortedNames) => {
-  height = data.length * 22 + margin.top + margin.bottom;
+  height = (drawingByGender ? data.length / 2 : data.length) * 22 + margin.top + margin.bottom;
 
   //Defines the scales
   const x = d3.scaleLinear()
@@ -42,13 +45,16 @@ let updateBarChart = (sortedNames) => {
     })
 
   //Draw barchart
+  g.selectAll(".bar").data(data).exit().remove();
   var transition = g.transition().duration(transitionDuration);
 
   transition
     .selectAll(".bar")
     .delay(delay)
-    .attr("y", (d) => { return y(d.nombre) })
-    .attr("width", d => x(d[value_key]) - x(0));
+    .attr("y", (d) =>  barPosition(d,y))
+    .attr("width", d => x(d[value_key]) - x(0))
+    .attr("height", d => barHeight(d,y))
+    .attr("fill", (d) => color(d.type));
 
   g.selectAll(".bar")
     .data(data)
@@ -57,10 +63,12 @@ let updateBarChart = (sortedNames) => {
     .attr("class", "bar")
     .attr("x", x(0))
     .attr("fill", (d) => color(d.type))
-    .attr("y", (d, i) => { console.log("enter rect"); return y(d.nombre); })
-    .attr("height", y.bandwidth())
+    .attr("y", (d) =>  barPosition(d,y))
+    .attr("height", d => barHeight(d,y))
     .attr("width", d => x(d[value_key]) - x(0));
 
+
+/*
   //Draw text
   gText.style("font", "13px sans-serif")
     .selectAll("text")
@@ -90,7 +98,7 @@ let updateBarChart = (sortedNames) => {
     .attr("fill", d => (x(d[value_key]) < minLabel ? "currentColor" : "white"))
     .attr("fill-opacity", d => (x(d[value_key]) < minLabel ? .7 : 1))
     .text(d => d[value_key]);
-
+*/
   // Draw Axes
   let axisTransition = gAxis.transition().duration(transitionDuration);
   axisTransition.select(".y.axis")
@@ -118,26 +126,42 @@ let drawYAxis = () => {
 let drawBySlide = () => {
   switch (currentSlide) {
     case 0:
+      drawingByGender = false;
+      data = dataAll;
       value_key = "total_casos";
       var sortedData = data.sort((a, b) => d3.ascending(a.nombre, b.nombre))
         .map(d => d.nombre);
       updateBarChart(sortedData);
       break;
     case 1:
+      drawingByGender = false;
+      data = dataAll;
       value_key = "total_casos";
       var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
         .map(d => d.nombre);
       updateBarChart(sortedData);
       break;
     case 2:
+      drawingByGender = false;
+      data = dataAll;
       value_key = "total_porciento";
       var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
         .map(d => d.nombre);
       updateBarChart(sortedData);
       break;
     case 3:
+      drawingByGender = false;
+      data = dataAll;
       value_key = "total_porciento";
       var sortedData = data.sort((a, b) => d3.descending(a.total_porciento, b.total_porciento))
+        .map(d => d.nombre);
+      updateBarChart(sortedData);
+      break;
+    case 4:
+      drawingByGender = true;
+      data = dataG;
+      value_key = "total_porciento";
+      var sortedData = data.sort((a, b) => d3.descending(a.total, b.total))
         .map(d => d.nombre);
       updateBarChart(sortedData);
       break;
@@ -169,10 +193,29 @@ let readData = () => {
   ).then(() => {
     let keys = d3.keys(result);
     keys.map((d) => {
-      data.push(result[d]);
-    });
+      let obj = result[d];
+      obj.type = "b";
+      dataAll.push(obj);
 
-    data.sort((a, b) => d3.ascending(a.nombre, b.nombre))
+      let dm = {
+        nombre: obj.nombre,
+        total_porciento: (obj.hombre_casos / obj.total_casos) * obj.total_porciento,
+        type: "m",
+        total: obj.total_porciento
+      };
+
+      let df = {
+        nombre: obj.nombre,
+        total_porciento: (obj.mujer_casos / obj.total_casos) * obj.total_porciento,
+        type: "f",
+        total: obj.total_porciento
+      };
+
+      dataG.push(dm);
+      dataG.push(df);
+    });
+    
+    data.sort((a, b) => d3.ascending(a.nombre, b.nombre));
     drawYAxis();
     drawBySlide();
   });
@@ -187,6 +230,15 @@ let color = (type) => {
     default:
       return "green"
   }
+}
+
+let barHeight = (d, scale) => {
+  return (d.type === "b" ? 1.0 : 0.5) * scale.bandwidth();
+}
+
+let barPosition = (d, scale) => {
+  let h = barHeight(d, scale);
+  return (d.type === "f" ? h : 0.0) + scale(d.nombre);
 }
 
 Reveal.addEventListener('slidechanged', function (evt) {
