@@ -1,12 +1,13 @@
-const width = 700;
+const width = 600;
 const margin = { top: 50, left: 100, right: 50, bottom: 0 };
 const svg = d3.select("#chart-container").append("svg");
 let g = svg.append("g");
 let gText = svg.append("g");
 let gAxis = svg.append("g");
-let data = [];
+
 let dataAll = [];
 let dataG = [];
+
 let height;
 let value_key = "total_casos";
 let total_key = "total";
@@ -19,7 +20,7 @@ let drawCentralLine = false;
 
 let delay = (d, i) => { return i * 5 };
 
-let updateBarChart = (sortedNames) => {
+let updateBarChart = (data, sortedNames) => {
   height = (drawingByGender ? data.length / 2 : data.length) * 22 + margin.top + margin.bottom;
 
   //Defines the scales
@@ -80,12 +81,14 @@ let updateBarChart = (sortedNames) => {
       .attr("x2", x(50))
       .attr("y2", height)
       .attr("stroke", "gray")
-      .attr("stroke-width", 2);
+      .attr("stroke-width", 1);
   }
 
 
-  /*
+  
     //Draw text
+    /*
+    gText.selectAll("text").data(data).exit().remove();
     gText.style("font", "13px sans-serif")
       .selectAll("text")
       .data(data)
@@ -129,7 +132,7 @@ let updateBarChart = (sortedNames) => {
 
 let drawYAxis = () => {
   const y = d3.scaleBand()
-    .domain(data.map(d => d.nombre))
+    .domain(dataAll.map(d => d.nombre))
     .range([margin.top, height - margin.bottom])
     .padding(0.1);
 
@@ -145,74 +148,67 @@ let drawBySlide = () => {
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
-      data = dataAll;
       value_key = "total_casos";
-      var sortedData = data.sort((a, b) => d3.ascending(a.nombre, b.nombre))
+      var sortedData = dataAll.sort((a, b) => d3.ascending(a.nombre, b.nombre))
         .map(d => d.nombre);
-      updateBarChart(sortedData);
+      updateBarChart(dataAll, sortedData);
       break;
     case 1:
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
-      data = dataAll;
       value_key = "total_casos";
-      var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
+      var sortedData = dataAll.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
         .map(d => d.nombre);
-      updateBarChart(sortedData);
+      updateBarChart(dataAll, sortedData);
       break;
     case 2:
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
-      data = dataAll;
       value_key = "total_porciento";
-      var sortedData = data.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
+      var sortedData = dataAll.sort((a, b) => d3.descending(a.total_casos, b.total_casos))
         .map(d => d.nombre);
-      updateBarChart(sortedData);
+      updateBarChart(dataAll, sortedData);
       break;
     case 3:
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
-      data = dataAll;
       value_key = "total_porciento";
-      var sortedData = data.sort((a, b) => d3.descending(a.total_porciento, b.total_porciento))
+      var sortedData = dataAll.sort((a, b) => d3.descending(a.total_porciento, b.total_porciento))
         .map(d => d.nombre);
-      updateBarChart(sortedData);
+      updateBarChart(dataAll, sortedData);
       break;
     case 5:
       drawingByGender = true;
       drawStacked = false;
       drawCentralLine = false;
-      data = dataG;
       value_key = "total_porciento";
-      var sortedData = data.sort((a, b) => d3.descending(a.total, b.total))
+      var sortedData = dataG.sort((a, b) => d3.descending(a.total, b.total))
         .map(d => d.nombre);
-      updateBarChart(sortedData);
+      updateBarChart(dataG, sortedData);
       break;
     case 4:
       drawingByGender = true;
       drawStacked = true;
       drawCentralLine = false;
-      data = dataG;
       value_key = "total_porciento";
       total_key = "total";
-      var sortedData = data.sort((a, b) => d3.descending(a.total, b.total))
+      var sortedData = dataG.sort((a, b) => d3.descending(a.total, b.total))
         .map(d => d.nombre);
-      updateBarChart(sortedData);
+      updateBarChart(dataG, sortedData);
       break;
 
     case 6:
       drawingByGender = true;
       drawStacked = true;
       drawCentralLine = true;
-      data = dataG;
       value_key = "total_porciento_parcial";
       total_key = "total_porcentaje";
-      var sortedData = data.sort((a, b) => d3.descending(a.total, b.total))
+      var sortedData = dataG.sort((a, b) => d3.descending(a.total, b.total))
         .map(d => d.nombre);
-      updateBarChart(sortedData);
+      updateBarChart(dataG, sortedData);
       break;
   }
 }
@@ -268,7 +264,6 @@ let readData = () => {
       dataG.push(df);
     });
 
-    data.sort((a, b) => d3.ascending(a.nombre, b.nombre));
     drawYAxis();
     drawBySlide();
   });
