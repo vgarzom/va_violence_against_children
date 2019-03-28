@@ -4,6 +4,20 @@
 
 .chart-container {
   position: absolute;
-  top: 20px;
-  left: 60px;
+  top: 0px;
+  left: 0px;
+  height: 100%;
+}
+
+#legend1 {
+  position: absolute !important;
+  top: 100px;
+  left: 50px;
+  visibility: hidden;
+}
+
+.map-layer {
+  fill: #fff;
+  stroke: #777;
+  stroke-width: 0.2px;
 }

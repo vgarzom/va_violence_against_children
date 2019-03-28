@@ -1,17 +1,22 @@
 const width = 600;
-const margin = { top: 50, left: 100, right: 50, bottom: 0 };
+const margin = { top: 70, left: 150, right: 50, bottom: 0 };
 const svg = d3.select("#chart-container").append("svg");
 const g = svg.append("g");
-const gText = svg.append("g");
-const gAxis = svg.append("g");
+const gText = g.append("g");
+const gAxis = g.append("g");
+const mapLayer = svg.append('g').classed('map-layer', true);
+var mapColorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 180]);
+
 const minLabel = margin.left + 150;
 const transitionDuration = 500;
-let height;
+let height = d3.select("#chart-container").node().getBoundingClientRect().height;
 let x; // X scale
 const xScaleRange = [margin.left, width - margin.right];
 
 let dataAll = [];
 let dataG = [];
+let dataKeys = {};
+let mapData = [];
 
 let value_key = "total_casos";
 let total_key = "total";
@@ -143,6 +148,23 @@ let drawYAxis = () => {
 let drawBySlide = () => {
   switch (currentSlide) {
     case 0:
+      colorMap(false);
+      g.attr("visibility", "hidden");
+      mapLayer.attr("visibility", "visible");
+      d3.select("#legend1").style("visibility", "hidden");
+      break;
+
+    case 1:
+      colorMap(true);
+      g.attr("visibility", "hidden");
+      d3.select("#legend1").style("visibility", "visible");
+      mapLayer.attr("visibility", "visible");
+      break;
+
+    case 2:
+      g.attr("visibility", "visible");
+      mapLayer.attr("visibility", "hidden");
+      d3.select("#legend1").style("visibility", "hidden");
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
@@ -156,7 +178,8 @@ let drawBySlide = () => {
 
       updateBarChart(dataAll, sortedData);
       break;
-    case 1:
+
+    case 3:
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
@@ -169,7 +192,7 @@ let drawBySlide = () => {
       updateBarChart(dataAll, sortedData);
       break;
 
-    case 2:
+    case 4:
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
@@ -182,7 +205,7 @@ let drawBySlide = () => {
       updateBarChart(dataAll, sortedData);
       break;
 
-    case 3:
+    case 5:
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
@@ -194,19 +217,8 @@ let drawBySlide = () => {
         .range(xScaleRange);
       updateBarChart(dataAll, sortedData);
       break;
-    case 5:
-      drawingByGender = true;
-      drawStacked = false;
-      drawCentralLine = false;
-      value_key = "total_porciento";
-      var sortedData = dataG.sort((a, b) => d3.descending(a.total, b.total))
-        .map(d => d.nombre);
-      x = d3.scaleLinear()
-        .domain([0, d3.max(dataAll, d => d.total_porciento)])
-        .range(xScaleRange);
-      updateBarChart(dataG, sortedData);
-      break;
-    case 4:
+
+    case 6:
       drawingByGender = true;
       drawStacked = true;
       drawCentralLine = false;
@@ -220,7 +232,20 @@ let drawBySlide = () => {
       updateBarChart(dataG, sortedData);
       break;
 
-    case 6:
+    case 7:
+      drawingByGender = true;
+      drawStacked = false;
+      drawCentralLine = false;
+      value_key = "total_porciento";
+      var sortedData = dataG.sort((a, b) => d3.descending(a.total, b.total))
+        .map(d => d.nombre);
+      x = d3.scaleLinear()
+        .domain([0, d3.max(dataAll, d => d.total_porciento)])
+        .range(xScaleRange);
+      updateBarChart(dataG, sortedData);
+      break;
+
+    case 8:
       drawingByGender = true;
       drawStacked = true;
       drawCentralLine = true;
@@ -236,7 +261,7 @@ let drawBySlide = () => {
   }
 }
 
-let readData = () => {
+let readData = (onFinish) => {
   var result = {};
   d3.csv(
     "../assets/data.csv",
@@ -248,7 +273,7 @@ let readData = () => {
       } else {
         let k_d = d.codigo.split("|")[0];
         k_d = (k_d.length === 1 ? "0" : "") + k_d;
-        d.codigo = k_d  + d.codigo.split("|")[1];
+        d.codigo = k_d + d.codigo.split("|")[1];
         result[k_d].municipios.push(d);
       }
       d.hombre_casos = +d.hombre_casos;
@@ -261,6 +286,7 @@ let readData = () => {
       d.type = "b";
     }
   ).then(() => {
+    dataKeys = result;
     let keys = d3.keys(result);
     keys.map((d) => {
       let obj = result[d];
@@ -289,19 +315,30 @@ let readData = () => {
       dataG.push(df);
     });
 
-    drawYAxis();
-    drawBySlide();
+    //drawYAxis();
+    //drawBySlide();
+    onFinish();
   });
+}
+
+let readMapData = () => {
+  d3.json("../assets/colombia.geo.json", (error, mapData) => {
+    console.log("data read", error, mapData);
+  }).then((mdata) => {
+    mapData = mdata;
+    drawMap();
+    drawLegend("#legend1", mapColorScale);
+  })
 }
 
 let color = (type) => {
   switch (type) {
     case "m":
-      return "steelblue";
+      return "#0894A1";
     case "f":
-      return "pink";
+      return "#ED9482";
     default:
-      return "green"
+      return "#F2B134"
   }
 }
 
@@ -320,9 +357,116 @@ let barPosition = (d, scale) => {
   return (d.type === "f" ? h : 0.0) + scale(d.nombre);
 }
 
+let drawMap = () => {
+  svg.attr("width", width).attr("height", height);
+  var features = mapData.features;
+  var projection = d3.geoMercator()
+    .scale(2000)
+    // Center the Map in Colombia
+    .center([-74, 4.5])
+    .translate([width / 2, height / 2]);
+
+  var path = d3.geoPath()
+    .projection(projection);
+
+  // Draw each province as a path
+  mapLayer.selectAll('path')
+    .data(features)
+    .enter().append('path')
+    .attr('d', path)
+    .attr('vector-effect', 'non-scaling-stroke')
+    .style('fill', "#eee");
+}
+
+let colorMap = (weighted) => {
+  var features = mapData.features;
+  mapLayer.selectAll('path')
+    .data(features)
+    .transition().duration(transitionDuration)
+    .style('fill', (d) => {
+      if (!weighted) {
+        return "#eee";
+      }
+      let dpto = dataKeys[d.properties.DPTO];
+      let value = dpto ? dpto.total_porciento : 0;
+      return mapColorScale(value);
+    });
+}
+
 Reveal.addEventListener('slidechanged', function (evt) {
   currentSlide = evt.indexh;
   drawBySlide();
 });
 
-readData();
+// create continuous color legend
+function drawLegend(selector_id, colorscale) {
+  var legendheight = 200,
+    legendwidth = 80,
+    margin = { top: 10, right: 60, bottom: 10, left: 2 };
+
+  var canvas = d3.select(selector_id)
+    .style("height", legendheight + "px")
+    .style("width", legendwidth + "px")
+    .style("position", "relative")
+    .append("canvas")
+    .attr("height", legendheight - margin.top - margin.bottom)
+    .attr("width", 1)
+    .style("height", (legendheight - margin.top - margin.bottom) + "px")
+    .style("width", (legendwidth - margin.left - margin.right) + "px")
+    .style("border", "1px solid #000")
+    .style("position", "absolute")
+    .style("top", (margin.top) + "px")
+    .style("left", (margin.left) + "px")
+    .node();
+
+  var ctx = canvas.getContext("2d");
+
+  var legendscale = d3.scaleLinear()
+    .range([1, legendheight - margin.top - margin.bottom])
+    .domain(colorscale.domain());
+
+  // image data hackery based on http://bl.ocks.org/mbostock/048d21cf747371b11884f75ad896e5a5
+  var image = ctx.createImageData(1, legendheight);
+  d3.range(legendheight).forEach(function (i) {
+    var c = d3.rgb(colorscale(legendscale.invert(i)));
+    image.data[4 * i] = c.r;
+    image.data[4 * i + 1] = c.g;
+    image.data[4 * i + 2] = c.b;
+    image.data[4 * i + 3] = 255;
+  });
+  ctx.putImageData(image, 0, 0);
+
+  // A simpler way to do the above, but possibly slower. keep in mind the legend width is stretched because the width attr of the canvas is 1
+  // See http://stackoverflow.com/questions/4899799/whats-the-best-way-to-set-a-single-pixel-in-an-html5-canvas
+  /*
+  d3.range(legendheight).forEach(function(i) {
+    ctx.fillStyle = colorscale(legendscale.invert(i));
+    ctx.fillRect(0,i,1,1);
+  });
+  */
+
+  var legendaxis = d3.axisRight()
+    .scale(legendscale)
+    .tickSize(6)
+    .ticks(8);
+
+  var svg = d3.select(selector_id)
+    .append("svg")
+    .attr("height", (legendheight) + "px")
+    .attr("width", (legendwidth) + "px")
+    .style("position", "absolute")
+    .style("left", "0px")
+    .style("top", "0px")
+
+  svg
+    .append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(" + (legendwidth - margin.left - margin.right + 3) + "," + (margin.top) + ")")
+    .call(legendaxis);
+};
+
+readData(() => {
+  drawYAxis();
+  g.attr("visibility", "hidden");
+  readMapData();
+});
