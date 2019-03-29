@@ -21,3 +21,11 @@
   stroke: #777;
   stroke-width: 0.2px;
 }
+
+.note {
+  border: dashed 2px #F67C1F !important;
+  padding: 30px !important;
+  color: #039BD8;
+  font-size: 0.7em !important;
+  border-radius: 20px;
+}

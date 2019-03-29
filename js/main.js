@@ -81,11 +81,11 @@ let updateBarChart = (data, sortedNames) => {
     g.append("line")
       .attr("class", "centralLine")
       .attr("x1", x(50))
-      .attr("y1", 0)
+      .attr("y1", margin.top)
       .attr("x2", x(50))
       .attr("y2", height)
-      .attr("stroke", "gray")
-      .attr("stroke-width", 1);
+      .attr("stroke", "red")
+      .attr("stroke-width", 2);
   }
 
 
@@ -252,6 +252,7 @@ let drawBySlide = () => {
       drawCentralLine = true;
       value_key = "total_porciento_parcial";
       total_key = "total_porcentaje";
+      g.attr("visibility", "visible");
       var sortedData = dataG.sort((a, b) => d3.descending(a.total, b.total))
         .map(d => d.nombre);
       x = d3.scaleLinear()
@@ -259,7 +260,12 @@ let drawBySlide = () => {
         .range(xScaleRange);
       updateBarChart(dataG, sortedData);
       break;
+
+    case 9:
+      g.attr("visibility", "hidden");
+      break;
   }
+
 }
 
 let readData = (onFinish) => {
