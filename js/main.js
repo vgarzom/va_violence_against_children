@@ -5,6 +5,7 @@ const groot = svg.append("g");
 const g = groot.append("g");
 const gText = g.append("g");
 const gAxis = g.append("g");
+const gLabel = svg.append("g");
 const mapLayer = svg.append('g').classed('map-layer', true);
 var mapColorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 200]);
 
@@ -147,6 +148,11 @@ let drawYAxis = () => {
 }
 
 let drawBySlide = () => {
+  gLabel.selectAll("text").remove();
+  let title = "";
+  let legendX = margin.left;
+  let legendY = margin.top - 25;
+  
   switch (currentSlide) {
     case 0:
       colorMap(false);
@@ -158,11 +164,15 @@ let drawBySlide = () => {
     case 1:
       colorMap(true);
       g.attr("visibility", "hidden");
+      legendX = 50;
+      legendY = 100;
       d3.select("#legend1").style("visibility", "visible");
       mapLayer.attr("visibility", "visible");
+      title = "Number of events"
       break;
 
     case 2:
+      title = "Number of events"
       g.attr("visibility", "visible");
       mapLayer.attr("visibility", "hidden");
       d3.select("#legend1").style("visibility", "hidden");
@@ -181,6 +191,7 @@ let drawBySlide = () => {
       break;
 
     case 3:
+      title = "Number of events"
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
@@ -194,6 +205,7 @@ let drawBySlide = () => {
       break;
 
     case 4:
+      title = "Events per 100,000 inhabitants"
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
@@ -207,6 +219,7 @@ let drawBySlide = () => {
       break;
 
     case 5:
+      title = "Events per 100,000 inhabitants"
       drawingByGender = false;
       drawStacked = false;
       drawCentralLine = false;
@@ -220,6 +233,7 @@ let drawBySlide = () => {
       break;
 
     case 6:
+      title = "Events per 100,000 inhabitants"
       drawingByGender = true;
       drawStacked = true;
       drawCentralLine = false;
@@ -234,6 +248,7 @@ let drawBySlide = () => {
       break;
 
     case 7:
+      title = "Events per 100,000 inhabitants"
       drawingByGender = true;
       drawStacked = false;
       drawCentralLine = false;
@@ -247,6 +262,7 @@ let drawBySlide = () => {
       break;
 
     case 8:
+      title = "Percentage"
       drawingByGender = true;
       drawStacked = true;
       drawCentralLine = true;
@@ -265,6 +281,14 @@ let drawBySlide = () => {
       g.attr("visibility", "hidden");
       break;
   }
+
+  gLabel.append("text")
+    .attr("font-family", "sans-serif")
+    .attr("font-size", 15)
+    .attr("y", legendY)
+    .attr("x", legendX)
+    .attr("fill", "black")
+    .text(title);
 
 }
 
