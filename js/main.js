@@ -1,11 +1,12 @@
 const width = 600;
 const margin = { top: 70, left: 150, right: 50, bottom: 0 };
 const svg = d3.select("#chart-container").append("svg");
-const g = svg.append("g");
+const groot = svg.append("g");
+const g = groot.append("g");
 const gText = g.append("g");
 const gAxis = g.append("g");
 const mapLayer = svg.append('g').classed('map-layer', true);
-var mapColorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 180]);
+var mapColorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 200]);
 
 const minLabel = margin.left + 150;
 const transitionDuration = 500;
