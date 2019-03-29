@@ -265,7 +265,7 @@ let drawBySlide = () => {
 let readData = (onFinish) => {
   var result = {};
   d3.csv(
-    "../assets/data.csv",
+    "https://raw.githubusercontent.com/vgarzom/va_violence_against_children/master/assets/data.csv",
     (d, i) => {
       if (!d.codigo.includes("|")) {
         d.municipios = []
@@ -323,7 +323,7 @@ let readData = (onFinish) => {
 }
 
 let readMapData = () => {
-  d3.json("../assets/colombia.geo.json", (error, mapData) => {
+  d3.json("https://raw.githubusercontent.com/vgarzom/va_violence_against_children/master/assets/colombia.geo.json", (error, mapData) => {
     console.log("data read", error, mapData);
   }).then((mdata) => {
     mapData = mdata;
