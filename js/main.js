@@ -3,6 +3,7 @@ const margin = { top: 70, left: 150, right: 10, bottom: 50 };
 const svg = d3.select("#chart-container").append("svg");
 const groot = svg.append("g");
 const g = groot.append("g");
+const gbars = g.append("g");
 const gText = g.append("g");
 const gAxis = g.append("g");
 const gLabel = svg.append("g");
@@ -50,13 +51,13 @@ let updateBarChart = (data, sortedNames) => {
   svg.attr("height", height)
     .attr("width", width - 5);
 
-  g.selectAll('.bar')
+  gbars.selectAll('.bar')
     .sort((a, b) => {
       return y(a.nombre) - y(b.nombre);
     })
 
   //Draw barchart
-  g.selectAll(".bar").data(data).exit().remove();
+  gbars.selectAll(".bar").data(data).exit().remove();
   var transition = g.transition().duration(transitionDuration);
 
   transition
@@ -68,7 +69,7 @@ let updateBarChart = (data, sortedNames) => {
     .attr("height", d => barHeight(d, y))
     .attr("fill", (d) => color(d.type));
 
-  g.selectAll(".bar")
+  gbars.selectAll(".bar")
     .data(data)
     .enter()
     .append("rect")
@@ -79,9 +80,9 @@ let updateBarChart = (data, sortedNames) => {
     .attr("height", d => barHeight(d, y))
     .attr("width", d => x(d[value_key]) - x(0));
 
-  g.select(".centralLine").remove();
+  gbars.select(".centralLine").remove();
   if (drawCentralLine) {
-    g.append("line")
+    gbars.append("line")
       .attr("class", "centralLine")
       .attr("x1", x(50))
       .attr("y1", margin.top)
