@@ -155,7 +155,7 @@ let drawBySlide = () => {
   let title = "";
   let legendX = margin.left;
   let legendY = margin.top - 25;
-  
+
   switch (currentSlide) {
     case 0:
       colorMap(false);
@@ -173,8 +173,12 @@ let drawBySlide = () => {
       mapLayer.attr("visibility", "visible");
       title = "Number of events"
       break;
-
     case 2:
+      g.attr("visibility", "hidden");
+      mapLayer.attr("visibility", "hidden");
+      d3.select("#legend1").style("visibility", "hidden");
+      break;
+    case 3:
       title = "Number of events"
       g.attr("visibility", "visible");
       mapLayer.attr("visibility", "hidden");
@@ -193,7 +197,7 @@ let drawBySlide = () => {
       updateBarChart(dataAll, sortedData);
       break;
 
-    case 3:
+    case 4:
       title = "Number of events"
       drawingByGender = false;
       drawStacked = false;
@@ -207,7 +211,7 @@ let drawBySlide = () => {
       updateBarChart(dataAll, sortedData);
       break;
 
-    case 4:
+    case 5:
       title = "Events per 100,000 inhabitants"
       drawingByGender = false;
       drawStacked = false;
@@ -221,7 +225,7 @@ let drawBySlide = () => {
       updateBarChart(dataAll, sortedData);
       break;
 
-    case 5:
+    case 6:
       title = "Events per 100,000 inhabitants"
       drawingByGender = false;
       drawStacked = false;
@@ -235,7 +239,7 @@ let drawBySlide = () => {
       updateBarChart(dataAll, sortedData);
       break;
 
-    case 6:
+    case 7:
       title = "Events per 100,000 inhabitants"
       drawingByGender = true;
       drawStacked = true;
@@ -250,7 +254,7 @@ let drawBySlide = () => {
       updateBarChart(dataG, sortedData);
       break;
 
-    case 7:
+    case 8:
       title = "Events per 100,000 inhabitants"
       drawingByGender = true;
       drawStacked = false;
@@ -264,7 +268,7 @@ let drawBySlide = () => {
       updateBarChart(dataG, sortedData);
       break;
 
-    case 8:
+    case 9:
       title = "Percentage"
       drawingByGender = true;
       drawStacked = true;
@@ -280,7 +284,7 @@ let drawBySlide = () => {
       updateBarChart(dataG, sortedData);
       break;
 
-    case 9:
+    case 10:
       g.attr("visibility", "hidden");
       break;
   }
