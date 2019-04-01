@@ -1,5 +1,5 @@
-const width = 600;
-const margin = { top: 70, left: 150, right: 50, bottom: 0 };
+const width = d3.select("#chart-container").node().getBoundingClientRect().width;
+const margin = { top: 70, left: 150, right: 10, bottom: 50 };
 const svg = d3.select("#chart-container").append("svg");
 const groot = svg.append("g");
 const g = groot.append("g");
@@ -12,6 +12,7 @@ var mapColorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 200]);
 const minLabel = margin.left + 150;
 const transitionDuration = 500;
 let height = d3.select("#chart-container").node().getBoundingClientRect().height;
+let container_height = d3.select("#chart-container").node().getBoundingClientRect().height;
 let x; // X scale
 const xScaleRange = [margin.left, width - margin.right];
 
@@ -30,7 +31,8 @@ let drawCentralLine = false;
 let delay = (d, i) => { return i * 5 };
 
 let updateBarChart = (data, sortedNames) => {
-  height = (drawingByGender ? data.length / 2 : data.length) * 22 + margin.top + margin.bottom;
+  let bar_height = (container_height - margin.top - margin.bottom) / (drawingByGender ? data.length / 2 : data.length);
+  height = (drawingByGender ? data.length / 2 : data.length) * bar_height + margin.top + margin.bottom;
 
   //Defines the scales
   const y = d3.scaleBand()
